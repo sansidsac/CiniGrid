@@ -17,6 +17,7 @@ import scenesRoutes from "./routes/scenes.js";
 import tasksRoutes from "./routes/tasks.js";
 import scriptRoutes from "./routes/script.js";
 import sceneBreakdownRoutes from "./routes/sceneBreakdown.js";
+import notificationRoutes from "./routes/notifications.js";
 
 dotenv.config();
 
@@ -26,7 +27,14 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173", // Vite default port
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:5173", // Vite default port  
+      "http://localhost:5174", // Alternative web port
+      "http://localhost:8081", // Expo mobile app
+      "http://192.168.34.75:8081", // Expo mobile app on network
+      "exp://192.168.34.75:8081", // Expo protocol
+      "exp://localhost:8081", // Expo protocol localhost
+    ],
     credentials: true,
   })
 );
@@ -66,6 +74,7 @@ app.use("/api/projects/:projectId/breakdown", sceneBreakdownRoutes); // Breakdow
 app.use("/api/invitations", invitationRoutes);
 app.use("/api/scenes", scenesRoutes);
 app.use("/api/tasks", tasksRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai", testGeminiOnlyRoutes); // Test routes under /api/ai
 app.use("/api/locations", locationsRoutes);

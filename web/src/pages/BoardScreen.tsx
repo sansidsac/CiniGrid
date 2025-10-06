@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { boardService, sceneService, taskService } from '../services/productionService';
+import { notificationService } from '../services/notificationService';
 import { useProject } from '../context/ProjectContext';
 import type { Scene, Task, BoardData, CreateSceneRequest, CreateTaskRequest } from '../types';
 
@@ -31,6 +32,9 @@ const BoardScreen: React.FC = () => {
   const [boardData, setBoardData] = useState<BoardData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // State for notifications
+  const [notificationLoading, setNotificationLoading] = useState<string | null>(null);
   
   // State for move functionality
   const [showMoveDropdown, setShowMoveDropdown] = useState<string | null>(null);
@@ -210,6 +214,33 @@ const BoardScreen: React.FC = () => {
     }
   };
 
+  // Handle sending schedule notifications
+  const handleNotifySchedule = async (card: KanbanCard) => {
+    if (!currentProject) return;
+    
+    try {
+      setNotificationLoading(card._id);
+      
+      const result = await notificationService.sendScheduleNotification(
+        card._id,
+        card.type,
+        currentProject._id
+      );
+      
+      if (result.success) {
+        // Show success feedback (you could use a toast library here)
+        alert('Schedule notification sent to all assigned crew members!');
+      } else {
+        setError(result.message || 'Failed to send notification');
+      }
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send notification');
+    } finally {
+      setNotificationLoading(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center" style={{ backgroundColor: '#FFFFFF' }}>
@@ -299,41 +330,66 @@ const BoardScreen: React.FC = () => {
                       {card.time && <div>{card.time}</div>}
                     </div>
                     
-                    {/* Move button with dropdown */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity move-dropdown-container">
-                      <div className="relative">
+                    {/* Action buttons */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1">
+                        {/* Notify Schedule button */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setShowMoveDropdown(showMoveDropdown === card._id ? null : card._id);
+                            handleNotifySchedule(card);
                           }}
-                          className="text-xs px-2 py-1 rounded bg-black text-white hover:bg-gray-800 flex items-center gap-1"
-                          title="Move to different queue"
+                          disabled={notificationLoading === card._id}
+                          className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 flex items-center gap-1"
+                          title="Notify all assigned crew about this schedule"
                         >
-                          Move
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
+                          {notificationLoading === card._id ? (
+                            <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5V7a6 6 0 10-12 0v10h5z" />
+                              </svg>
+                              Notify
+                            </>
+                          )}
                         </button>
-                        
-                        {/* Dropdown menu */}
-                        {showMoveDropdown === card._id && (
-                          <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
-                            {columns.filter(col => col !== columnName).map(status => (
-                              <button
-                                key={status}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStatusChange(card._id, card.type, status);
-                                  setShowMoveDropdown(null);
-                                }}
-                                className="block w-full text-left px-3 py-2 text-xs hover:bg-gray-100 text-gray-700 first:rounded-t-md last:rounded-b-md"
-                              >
-                                {formatColumnName(status)}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+
+                        {/* Move button with dropdown */}
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowMoveDropdown(showMoveDropdown === card._id ? null : card._id);
+                            }}
+                            className="text-xs px-2 py-1 rounded bg-black text-white hover:bg-gray-800 flex items-center gap-1"
+                            title="Move to different queue"
+                          >
+                            Move
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {/* Dropdown menu */}
+                          {showMoveDropdown === card._id && (
+                            <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
+                              {columns.filter(col => col !== columnName).map(status => (
+                                <button
+                                  key={status}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStatusChange(card._id, card.type, status);
+                                    setShowMoveDropdown(null);
+                                  }}
+                                  className="block w-full text-left px-3 py-2 text-xs hover:bg-gray-100 text-gray-700 first:rounded-t-md last:rounded-b-md"
+                                >
+                                  {formatColumnName(status)}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
