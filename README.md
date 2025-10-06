@@ -86,11 +86,9 @@ npm run test
    ```
 
 ### Live Demo
-- **Frontend URL**: [TBD - Deployment pending]
-- **Backend API**: [TBD - Deployment pending]
-- **Demo Credentials**: 
-  - Username: `scout_sara`
-  - Password: `password123`
+- **Frontend URL**: [ https://cini-grid.vercel.app/ ]
+- **Backend API**: [ https://cinigrid.onrender.com/ ]
+- **Credentials**: acquire via mail (mailto:kssreekumar04@gmail.com)
 
 ## 🔧 Environment Variables
 
